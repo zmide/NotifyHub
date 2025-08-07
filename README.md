@@ -2,6 +2,9 @@
 
 一个基于Flask的Web应用，集成了多种通知渠道（邮件、短信、Telegram、钉钉、飞书等）的统一通知平台。
 
+## WIKI
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/JunXiaoRuo/auto_click)
+
 ## 环境
 
 本项目基于 Python 3.8 开发

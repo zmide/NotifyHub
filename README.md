@@ -3,7 +3,7 @@
 一个基于Flask的Web应用，集成了多种通知渠道（邮件、短信、Telegram、钉钉、飞书等）的统一通知平台。
 
 ## WIKI
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/JunXiaoRuo/auto_click)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/zmide/NotifyHub)
 
 ## 环境
 

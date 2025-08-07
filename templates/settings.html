@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}通道设置{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-8">
+        <h2><i class="bi bi-gear"></i> 通知通道设置</h2>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-plus-circle"></i> 添加新通道</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.channel_id.label(class="form-label") }}
+                        {{ form.channel_id(class="form-control", placeholder="例如: my_email_channel") }}
+                        {% if form.channel_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.channel_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">此ID将在API调用时使用，必须唯一且只包含字母、数字和下划线</small>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.channel_type.label(class="form-label") }}
+                        {{ form.channel_type(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.config.label(class="form-label") }}
+                        {{ form.config(class="form-control", rows="8") }}
+                        {% if form.config.errors %}
+                            <div class="text-danger">
+                                {% for error in form.config.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#configExamples">
+                                <i class="bi bi-eye"></i> 查看配置示例
+                            </button>
+                            <div class="collapse mt-2" id="configExamples">
+                                <div class="card card-body">
+                                    <ul class="nav nav-tabs" id="configTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#smtp" type="button">SMTP</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#sms" type="button">阿里云短信</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tg" type="button">Telegram</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dingtalk" type="button">钉钉</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#feishu" type="button">飞书</button>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content p-3">
+                                        <div class="tab-pane fade show active" id="smtp">
+<pre>{
+    "smtp_server": "smtp.exmail.qq.com",
+    "smtp_port": 465,
+    "use_ssl": true,
+    "smtp_username": "your@company.com",
+    "smtp_password": "your_password"
+}</pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="sms">
+                                            <pre>
+{
+    "access_key_id": "your_access_key_id",
+    "access_key_secret": "your_access_key_secret"
+}
+</pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="tg">
+                                            <pre>{
+    "api_url":"https://api.telegram.org", # 结尾不要/
+    "is_proxy": true, #是否开启代理
+    "https_proxy":"http://127.0.0.1:10808",
+    "bot_token": "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ",
+    "chat_id": "-123456789"
+}
+
+
+
+获取 Telegram Bot Token
+创建 Telegram Bot:
+
+在 Telegram 中搜索并联系 @BotFather
+发送 /newbot 命令
+按照提示输入机器人名称和用户名（必须以 bot 结尾）
+创建成功后，@BotFather 会提供你的 Bot Token，格式为 数字:字母数字组合
+
+获取 Chat ID:
+个人聊天:
+
+给你的机器人发送任意消息
+访问 https://api.telegram.org/bot&ltYOUR_BOT_TOKEN&gt;/getUpdates
+在返回的 JSON 中查找 chat.id 字段
+
+群组聊天:
+
+将机器人添加到群组
+在群组中发送任意消息
+同样通过 getUpdates 接口获取群组的 chat.id
+                                            </pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="dingtalk">
+                                            <pre>{
+    "webhook_url": "https://oapi.dingtalk.com/robot/send?access_token=xxx",
+    "msg_type": "text",
+    "at_mobiles": ["13800138000"]
+}</pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="feishu">
+                                            <pre>{
+    "webhook_url": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx"
+}</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 按钮 -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">取消</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> 帮助信息</h5>
+            </div>
+            <div class="card-body">
+                <h6><i class="bi bi-envelope"></i> SMTP邮件</h6>
+                <p class="small">需要提供SMTP服务器信息和账号密码。</p>
+
+                <h6 class="mt-3"><i class="bi bi-phone"></i> 阿里云短信</h6>
+                <p class="small">需要阿里云AccessId和AccessKey。</p>
+
+                <h6 class="mt-3"><i class="bi bi-telegram"></i> Telegram</h6>
+                <p class="small">需要API_URL、机器人Token和聊天ID(个人聊天或群组)。</p>
+
+                <h6 class="mt-3"><i class="bi bi-chat-dots"></i> 钉钉</h6>
+                <p class="small">需要机器人Webhook URL，可选@特定手机号。</p>
+
+                <h6 class="mt-3"><i class="bi bi-chat-square-text"></i> 飞书</h6>
+                <p class="small">需要机器人Webhook URL。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

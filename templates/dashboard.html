@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}控制台{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2><i class="bi bi-speedometer2"></i> 控制台</h2>
+        <p class="text-muted">欢迎回来, {{ user.username }}!</p>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-key"></i> API访问凭证</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">您的API Token:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="apiToken" value="{{ user.token }}" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyToken()">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                    </div>
+                    <small class="text-muted">请妥善保管此Token，不要泄露给他人</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-send"></i> API调用示例</h5>
+            </div>
+            <div class="card-body">
+                <div class="mt-3">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#testModal">
+                        <i class="bi bi-play-circle"></i> 测试API
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#configExamples">
+                                <i class="bi bi-eye"></i> 查看API示例
+                            </button>
+                            <div class="collapse mt-2" id="configExamples">
+                                <div class="card card-body">
+                                    <ul class="nav nav-tabs" id="configTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#smtp" type="button">SMTP</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#sms" type="button">短信</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tg" type="button">Telegram</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dingtalk" type="button">钉钉</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#feishu" type="button">飞书</button>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content p-3">
+                                        <div class="tab-pane fade show active" id="smtp">
+                                            <pre>
+POST {{ request.url_root }}api/notify
+Content-Type: application/json
+
+{
+    "token": "{{ user.token }}",
+    "id": "your_channel_id",
+    "content": {"to_email":"收件人邮箱","subject":"主题","from_name":"发件人昵称","text_body":"&lt;b&gt;测试通知&lt;/b&gt;&lt;p&gt;这是一条测试消息&lt;/p&gt;"}
+}
+                                            </pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="sms">
+                                            <pre>
+POST {{ request.url_root }}api/notify
+Content-Type: application/json
+
+{
+    "token": "{{ user.token }}",
+    "id": "your_channel_id",
+    "content": {"phone_numbers": "收件手机号","sign_name": "签名名称","template_code": "模版ID","code":"6666" # code对应模板中的变量，可继续添加}
+}
+</pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="tg">
+                                            <pre>
+POST {{ request.url_root }}api/notify
+Content-Type: application/json
+
+{
+    "token": "{{ user.token }}",
+    "id": "your_channel_id",
+    "content": "这是一条测试消息"
+}
+                                            </pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="dingtalk">
+                                            <pre>
+POST {{ request.url_root }}api/notify
+Content-Type: application/json
+
+{
+    "token": "{{ user.token }}",
+    "id": "your_channel_id",
+    "content": "这是一条测试消息"
+}
+                                            </pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="feishu">
+                                            <pre>
+POST {{ request.url_root }}api/notify
+Content-Type: application/json
+
+{
+    "token": "{{ user.token }}",
+    "id": "your_channel_id",
+    "content": "这是一条测试消息"
+}
+                                            </pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-collection"></i> 我的通知通道</h5>
+            </div>
+            <div class="card-body">
+                {% if user.channels %}
+                    <ul class="list-group">
+                        {% for channel in user.channels %}
+                            <!-- 通道列表项 -->
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    {% if channel.channel_type == 'smtp' %}
+                                        <i class="bi bi-envelope channel-icon text-primary"></i>
+                                    {% elif channel.channel_type == 'sms' %}
+                                        <i class="bi bi-phone channel-icon text-success"></i>
+                                    {% elif channel.channel_type == 'tg' %}
+                                        <i class="bi bi-telegram channel-icon text-info"></i>
+                                    {% elif channel.channel_type == 'dingtalk' %}
+                                        <i class="bi bi-chat-dots channel-icon text-warning"></i>
+                                    {% elif channel.channel_type == 'feishu' %}
+                                        <i class="bi bi-chat-square-text channel-icon text-danger"></i>
+                                    {% endif %}
+                                    {{ channel.channel_id }} ({{ channel.channel_type }})
+                                </div>
+                                <div>
+                                    <a href="{{ url_for('edit_channel', channel_id=channel.id) }}"
+                                       class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <span class="badge bg-secondary">{{ channel.created_at.strftime('%Y-%m-%d') }}</span>
+                                </div>
+                            </li>
+
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="alert alert-warning">
+                        您还没有配置任何通知通道
+                    </div>
+                    <a href="{{ url_for('settings') }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-circle"></i> 添加通道
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 测试API模态框 -->
+<div class="modal fade" id="testModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">测试API</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="testForm">
+                    <div class="mb-3">
+                        <label class="form-label">选择通道</label>
+                        <select class="form-select" id="testChannel" required>
+                            <option value="">-- 选择通道 --</option>
+                            {% for channel in user.channels %}
+                                <option value="{{ channel.channel_id }}">{{ channel.channel_id }} ({{ channel.channel_type }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">测试内容（填写json中content的内容）</label>
+                        <textarea class="form-control" id="testContent" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="testNotification()">发送测试</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    function copyToken() {
+        const tokenInput = document.getElementById('apiToken');
+        tokenInput.select();
+        document.execCommand('copy');
+
+        // 显示复制成功提示
+        const copyBtn = event.target.closest('button');
+        const originalHtml = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="bi bi-check2"></i> 已复制';
+
+        setTimeout(() => {
+            copyBtn.innerHTML = originalHtml;
+        }, 2000);
+    }
+
+    function testNotification() {
+        const channelId = document.getElementById('testChannel').value;
+        const content = document.getElementById('testContent').value;
+
+        if (!channelId || !content) {
+            alert('请选择通道并输入测试内容');
+            return;
+        }
+
+        const data = {
+            token: '{{ user.token }}',
+            id: channelId,
+            content: content
+        };
+
+        fetch('{{ url_for("notify") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('测试通知发送成功！');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('testModal'));
+                modal.hide();
+            } else {
+                alert('发送失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('发生错误: ' + error);
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

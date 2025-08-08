@@ -44,6 +44,21 @@ class NotificationChannel(db.Model):
     config = db.Column(db.Text, nullable=False)  # 存储为JSON字符串
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def get_decrypted_config(self):
+        """获取解密后的配置"""
+        from utils.crypto import ConfigEncryptor
+        try:
+            return json.loads(ConfigEncryptor.decrypt_config(self.config))
+        except:
+            # 兼容未加密的旧数据
+            return json.loads(self.config)
+
+    def set_encrypted_config(self, config_dict):
+        """加密并存储配置"""
+        from utils.crypto import ConfigEncryptor
+        self.config = ConfigEncryptor.encrypt_config(json.dumps(config_dict))
+
+
 
 # 表单
 class RegistrationForm(FlaskForm):
@@ -169,9 +184,9 @@ def settings():
             channel = NotificationChannel(
                 user_id=current_user.id,
                 channel_id=form.channel_id.data,
-                channel_type=form.channel_type.data,
-                config=form.config.data
+                channel_type=form.channel_type.data
             )
+            channel.set_encrypted_config(json.loads(form.config.data))  # 使用加密方法
             db.session.add(channel)
             db.session.commit()
             flash('通道配置已保存', 'success')
@@ -182,14 +197,19 @@ def settings():
 @app.route('/settings/edit/<int:channel_id>', methods=['GET', 'POST'])
 @login_required
 def edit_channel(channel_id):
+    # 获取通道对象
     channel = NotificationChannel.query.get_or_404(channel_id)
+
+    # 权限检查
     if channel.user_id != current_user.id:
         flash('无权访问该通道', 'danger')
         return redirect(url_for('settings'))
 
     form = ChannelForm()
+
+    # POST请求处理（提交表单时）
     if form.validate_on_submit():
-        # 检查通道ID是否已存在（排除当前通道）
+        # 检查通道ID是否已存在
         existing = NotificationChannel.query.filter(
             NotificationChannel.user_id == current_user.id,
             NotificationChannel.channel_id == form.channel_id.data,
@@ -201,16 +221,28 @@ def edit_channel(channel_id):
         else:
             channel.channel_id = form.channel_id.data
             channel.channel_type = form.channel_type.data
-            channel.config = form.config.data
+            try:
+                # 将JSON字符串转为字典，然后加密存储
+                config_dict = json.loads(form.config.data)
+                channel.set_encrypted_config(config_dict)
+            except json.JSONDecodeError:
+                flash('配置必须是有效的JSON格式', 'danger')
+                return redirect(url_for('edit_channel', channel_id=channel.id))
+
             db.session.commit()
             flash('通道配置已更新', 'success')
             return redirect(url_for('dashboard'))
 
-    # 如果是GET请求，预填充表单
+    # GET请求处理（显示编辑表单时）
     if request.method == 'GET':
         form.channel_id.data = channel.channel_id
         form.channel_type.data = channel.channel_type
-        form.config.data = channel.config
+        try:
+            decrypted_config = channel.get_decrypted_config()
+            form.config.data = json.dumps(decrypted_config, indent=2)  # 美化JSON格式
+        except:
+            # 如果解密失败（如旧数据未加密），直接显示原始数据
+            form.config.data = channel.config
 
     return render_template('edit_channel.html', form=form, channel=channel)
 
@@ -247,7 +279,8 @@ def notify():
         return jsonify({'status': 'error', 'message': '通道ID不存在'}), 404
 
     try:
-        config = json.loads(channel.config)
+        # 使用解密后的配置
+        config = channel.get_decrypted_config()
         result = None
 
         if channel.channel_type == 'smtp':

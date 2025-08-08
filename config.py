@@ -8,6 +8,9 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///database.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # 添加加密密钥配置
+    ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', 'default-encryption_key')
+
     # IP及端口设置
     SERVER_HOST = os.getenv('SERVER_HOST', '127.0.0.1')
     SERVER_PORT = os.getenv('SERVER_PORT', '5000')

@@ -20,6 +20,9 @@
                         <button class="btn btn-outline-secondary" onclick="copyToken()">
                             <i class="bi bi-clipboard"></i> 复制
                         </button>
+                        <button class="btn btn-outline-warning" onclick="refreshToken()">
+                            <i class="bi bi-arrow-clockwise"></i> 刷新
+                        </button>
                     </div>
                     <small class="text-muted">请妥善保管此Token，不要泄露给他人</small>
                 </div>
@@ -213,6 +216,28 @@ Content-Type: application/json
 
 {% block scripts %}
 <script>
+    function refreshToken() {
+        if (!confirm('刷新Token将使旧Token失效，确定继续吗？')) {
+            return;
+        }
+
+        fetch('/refresh_token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('apiToken').value = data.new_token;
+                alert('Token已刷新！页面将重新加载...');
+                window.location.reload();
+            } else {
+                alert('刷新失败');
+            }
+        });
+    }
     function copyToken() {
         const tokenInput = document.getElementById('apiToken');
         tokenInput.select();

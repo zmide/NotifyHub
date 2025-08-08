@@ -98,6 +98,13 @@ def load_user(user_id):
 def index():
     return render_template('index.html')
 
+@app.route('/refresh_token', methods=['POST'])
+@login_required
+def refresh_token():
+    # 生成新的token
+    current_user.token = secrets.token_hex(32)
+    db.session.commit()
+    return jsonify({'status': 'success', 'new_token': current_user.token})
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

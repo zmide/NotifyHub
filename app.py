@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
+from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, ValidationError
 from config import Config
@@ -106,6 +107,7 @@ def refresh_token():
     db.session.commit()
     return jsonify({'status': 'success', 'new_token': current_user.token})
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if not app.config['REGISTRATION_ENABLED']:
@@ -118,7 +120,7 @@ def register():
         user = User(
             username=form.username.data,
             email=form.email.data,
-            password=form.password.data,  # 生产环境应该加密
+            password=generate_password_hash(form.password.data),  # 使用哈希加密
             token=token
         )
         db.session.add(user)
@@ -133,12 +135,11 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if user and user.password == form.password.data:
+        if user and check_password_hash(user.password, form.password.data):
             login_user(user)
             return redirect(url_for('dashboard'))
         flash('用户名或密码错误', 'danger')
     return render_template('login.html', form=form)
-
 
 @app.route('/logout')
 @login_required

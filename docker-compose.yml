@@ -1,0 +1,12 @@
+version: '3'
+services:
+  notifyhub:
+    image: notifyhub
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - notifyhub-data:/var/lib/notifyhub
+volumes:
+  notifyhub-data:

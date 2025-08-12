@@ -14,6 +14,8 @@
 ```
 .
 ├── app.py                # 主应用文件
+├── Dockerfile            # Docker配置文件
+├── docker-compose.yml    # Docker Compose
 ├── config.py             # 配置文件
 ├── .env.template         # 环境变量模板文件
 ├── requirements.txt      # 依赖文件
@@ -52,13 +54,51 @@
 
 ## 快速开始
 
-### 安装依赖
+### 推荐方式：使用Docker部署（生产环境推荐）
 
+1. 构建Docker镜像：
+```bash
+docker build -t notifyhub .
+```
+
+2. 运行容器：
+
+常规部署：
+```bash
+docker run -d -p 5000:5000 \
+  -v notifyhub-data:/var/lib/notifyhub \
+  -e SECRET_KEY=your-secret-key \
+  -e ENCRYPTION_KEY=your-encryption-key \
+  -e REGISTRATION_ENABLED=true \
+  -e DATABASE_URL=sqlite:////var/lib/notifyhub/database.db \
+  notifyhub
+```
+生成安全密钥：
+```bash
+# 生成SECRET_KEY
+python -c "import secrets; print( secrets.token_hex(32))"
+
+# 生成ENCRYPTION_KEY
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+`REGISTRATION_ENABLED`:是否开启注册。
+
+推荐使用[docker-compose.yml](./docker-compose.yml)部署！
+
+
+3. 访问应用：
+```
+http://localhost:5000
+```
+
+### 传统方式：本地运行（开发环境）
+
+#### 安装依赖
 ```bash
 pip install -r requirements.txt
 ```
-## 配置选项
- 
+
+#### 配置选项
 在 `.env` 文件中可以配置以下选项：
  
 ```env
@@ -75,10 +115,9 @@ REGISTRATION_ENABLED=true
 # 服务器配置
 SERVER_HOST=0.0.0.0
 SERVER_PORT=5000
-
 ```
 
-### 配置环境变量
+#### 配置环境变量
 
 1. 复制`.env.template`文件为`.env`文件：
 ```bash
@@ -92,16 +131,15 @@ python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))" >> .env
 
 # 生成ENCRYPTION_KEY（必须！用于加密敏感配置）
 echo "ENCRYPTION_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" >> .env
-
 ```
 
-### 运行应用
-
+#### 运行应用
 ```bash
 python app.py
 ```
 
 应用启动后，访问 http://127.0.0.1:5000 即可使用
+
 
 ## API使用示例
 

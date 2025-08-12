@@ -28,6 +28,12 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+@app.cli.command('init-db')
+def init_db():
+    """Initialize the database."""
+    db.create_all()
+    print('Initialized the database.')
+
 
 # 数据库模型
 class User(UserMixin, db.Model):
@@ -615,6 +621,7 @@ def inject_now():
 # 初始化数据库
 with app.app_context():
     db.create_all()
+
 
 if __name__ == '__main__':
     app.run(

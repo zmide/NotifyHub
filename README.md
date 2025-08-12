@@ -15,7 +15,7 @@
 .
 ├── app.py                # 主应用文件
 ├── Dockerfile            # Docker配置文件
-├── docker-compose.yml    # Docker Compose
+├── docker-compose.yml    # Docker Compose模板
 ├── config.py             # 配置文件
 ├── .env.template         # 环境变量模板文件
 ├── requirements.txt      # 依赖文件
@@ -63,17 +63,64 @@ docker build -t notifyhub .
 
 2. 运行容器：
 
-常规部署：
+使用[docker-compose.yml](./docker-compose.yml)部署！
 ```bash
-docker run -d -p 5000:5000 \
-  -v notifyhub-data:/var/lib/notifyhub \
-  -e SECRET_KEY=your-secret-key \
-  -e ENCRYPTION_KEY=your-encryption-key \
-  -e REGISTRATION_ENABLED=true \
-  -e DATABASE_URL=sqlite:////var/lib/notifyhub/database.db \
-  notifyhub
+services:
+  notifyhub:
+    image: notifyhub
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - notifyhub-data:/var/lib/notifyhub
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: sh -c "sleep 5 && python app.py"  # 添加启动延迟
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: notifyhub
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s  # 给MySQL更长的初始化时间
+    restart: unless-stopped
+
+volumes:
+  notifyhub-data:
+  mysql-data:
 ```
-生成安全密钥：
+配置文件详解
+
+在 `.env` 文件中可以配置以下选项：
+ 
+```env
+# 基本配置
+SECRET_KEY=your-secret-key # 可使用下方命令生成
+ENCRYPTION_KEY=your-encryption-key-here # 可使用下方命令生成
+
+# MySQL数据库配置
+MYSQL_ROOT_PASSWORD=123456
+DATABASE_URL=mysql+pymysql://root:123456@mysql/notifyhub
+
+# 注册功能开关 (true/false)
+REGISTRATION_ENABLED=true
+
+# 服务器配置
+SERVER_HOST=0.0.0.0
+SERVER_PORT=5000
+```
 ```bash
 # 生成SECRET_KEY
 python -c "import secrets; print( secrets.token_hex(32))"
@@ -81,9 +128,14 @@ python -c "import secrets; print( secrets.token_hex(32))"
 # 生成ENCRYPTION_KEY
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
-`REGISTRATION_ENABLED`:是否开启注册。
+`SECRET_KEY`:Flask 安全密钥。</br>
+`ENCRYPTION_KEY`:通道配置加密密钥。</br>
+`MYSQL_ROOT_PASSWORD`:数据库ROOT密码（默认123456，建议设置复杂）。</br>
+`DATABASE_URL`:数据库连接URL（密码与上面设置一样）。</br>
+`REGISTRATION_ENABLED`:注册功能开关。</br>
+`ENCRYPTION_KEY`:通道配置加密密钥。</br>
+`REGISTRATION_ENABLED`:是否开启注册。</br>
 
-推荐使用[docker-compose.yml](./docker-compose.yml)部署！
 
 
 3. 访问应用：
@@ -91,7 +143,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 http://localhost:5000
 ```
 
-### 传统方式：本地运行（开发环境）
+### 本地运行（开发环境）
 
 #### 安装依赖
 ```bash
@@ -103,15 +155,16 @@ pip install -r requirements.txt
  
 ```env
 # 基本配置
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///database.db
-
-# 加密配置（必须！用于加密通道敏感信息）
+SECRET_KEY=your-secret-key
 ENCRYPTION_KEY=your-encryption-key-here
+
+# MySQL数据库配置
+MYSQL_ROOT_PASSWORD=123456
+DATABASE_URL=mysql+pymysql://root:123456@localhost/notifyhub
 
 # 注册功能开关 (true/false)
 REGISTRATION_ENABLED=true
- 
+
 # 服务器配置
 SERVER_HOST=0.0.0.0
 SERVER_PORT=5000
@@ -129,8 +182,8 @@ cp .env.template .env
 # 生成SECRET_KEY
 python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))" >> .env
 
-# 生成ENCRYPTION_KEY（必须！用于加密敏感配置）
-echo "ENCRYPTION_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" >> .env
+# 生成ENCRYPTION_KEY
+python -c "import secrets; print('ENCRYPTION_KEY=' + secrets.token_urlsafe(32))" >> .env
 ```
 
 #### 运行应用

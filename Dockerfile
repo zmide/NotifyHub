@@ -17,6 +17,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         gcc \
         python3-dev \
+        default-libmysqlclient-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -30,13 +31,9 @@ RUN python -m pip install --no-cache-dir --upgrade pip==23.0.1 && \
 
 COPY . .
 
-RUN mkdir -p /var/lib/notifyhub
-
 ENV FLASK_APP=app.py \
-    FLASK_DEBUG=0 \
-    DATABASE_URL=sqlite:////var/lib/notifyhub/database.db
+    FLASK_DEBUG=0
 
 EXPOSE 5000
 
 CMD ["sh", "-c", "flask init-db && gunicorn --bind 0.0.0.0:5000 app:app"]
-

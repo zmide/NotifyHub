@@ -7,7 +7,29 @@ services:
       - .env
     volumes:
       - notifyhub-data:/var/lib/notifyhub
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: sh -c "sleep 5 && python app.py"  # 添加启动延迟
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: notifyhub
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s  # 给MySQL更长的初始化时间
     restart: unless-stopped
 
 volumes:
   notifyhub-data:
+  mysql-data:

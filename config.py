@@ -5,9 +5,15 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'default-secret-key')
-    # SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///database.db') # 开发环境
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:////var/lib/notifyhub/database.db') # 运行环境（linux）
+
+    # MySQL配置
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'mysql+pymysql://username:password@localhost/notifyhub')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 10,
+        'pool_recycle': 300,
+        'pool_pre_ping': True
+    }
 
     # 添加加密密钥配置
     ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', 'default-encryption_key')

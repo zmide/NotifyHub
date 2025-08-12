@@ -12,10 +12,14 @@ from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAr
 from wtforms.validators import DataRequired, Email, Length, ValidationError
 from config import Config
 from email.mime.text import MIMEText
-from email.utils import formataddr, parseaddr
+from email.utils import formataddr
 import smtplib
 import json
 import idna
+import hmac
+import hashlib
+import time
+import urllib.parse
 
 # 初始化应用
 app = Flask(__name__)
@@ -91,7 +95,9 @@ class ChannelForm(FlaskForm):
         ('sms', '阿里云短信'),
         ('tg', 'Telegram'),
         ('dingtalk', '钉钉'),
-        ('feishu', '飞书')
+        ('feishu', '飞书'),
+        ('wechat', '企业微信'),
+        ('webhook', 'webhook')
     ], validators=[DataRequired()])
     config = TextAreaField('配置(JSON格式)', validators=[DataRequired()])
     submit = SubmitField('保存')
@@ -293,6 +299,10 @@ def notify():
             result = send_dingtalk(config, data['content'])
         elif channel.channel_type == 'feishu':
             result = send_feishu(config, data['content'])
+        elif channel.channel_type == 'wechat':
+            result = send_wechat(config, data['content'])
+        elif channel.channel_type == 'webhook':
+            result = send_webhook(config, data['content'])
         else:
             return jsonify({'status': 'error', 'message': '不支持的通道类型'}), 400
 
@@ -478,9 +488,10 @@ def send_telegram(config, content):
         raise Exception(f"Telegram发送失败: {str(e)}")
 
 def send_dingtalk(config, content):
-    """发送钉钉通知"""
+    """发送钉钉通知（支持加签验证）"""
     try:
         webhook_url = config['webhook_url']
+        secret = config.get('secret')
 
         if config.get('msg_type', 'text') == 'text':
             payload = {
@@ -504,14 +515,27 @@ def send_dingtalk(config, content):
                 "isAtAll": False
             }
 
+        if secret:
+            timestamp = str(round(time.time() * 1000))
+            sign = generate_sign(secret, timestamp)
+            webhook_url = f"{webhook_url}&timestamp={timestamp}&sign={sign}"
+
         response = requests.post(webhook_url, json=payload)
         result = response.json()
-
         if result.get('errcode') != 0:
             raise Exception(f"钉钉发送失败: {result.get('errmsg')}")
         return True
     except Exception as e:
         raise Exception(f"钉钉发送失败: {str(e)}")
+def generate_sign(secret, timestamp):
+    """生成钉钉加签签名"""
+    string_to_sign = f"{timestamp}\n{secret}"
+    hmac_code = hmac.new(
+        secret.encode('utf-8'),
+        string_to_sign.encode('utf-8'),
+        hashlib.sha256
+    ).digest()
+    return urllib.parse.quote_plus(base64.b64encode(hmac_code))
 
 
 def send_feishu(config, content):
@@ -534,6 +558,56 @@ def send_feishu(config, content):
         return True
     except Exception as e:
         raise Exception(f"飞书发送失败: {str(e)}")
+
+def send_wechat(config, content):
+    """发送钉钉通知"""
+    try:
+        webhook_url = config['webhook_url']
+
+        if config.get('msg_type', 'text') == 'text':
+            payload = {
+                "msgtype": "text",
+                "text": {
+                    "content": content
+                }
+            }
+        else:  # markdown
+            payload = {
+                "msgtype": "markdown",
+                "markdown": {
+                    "content": content
+                }
+            }
+
+        response = requests.post(webhook_url, json=payload)
+        result = response.json()
+
+        if result.get('errcode') != 0:
+            raise Exception(f"钉钉发送失败: {result.get('errmsg')}")
+        return True
+    except Exception as e:
+        raise Exception(f"钉钉发送失败: {str(e)}")
+
+def send_webhook(config, content):
+    """发送webhook通知"""
+    try:
+        webhook_url = config['webhook_url']
+
+        try:
+            payload = json.loads(content)
+        except json.JSONDecodeError:
+            raise Exception(f"提交JSON格式错误")
+        response = requests.post(webhook_url, json=payload)
+        result = response.json()
+
+        if result.get('errcode') != 0:
+            raise Exception(f"webhook发送失败: {result.get('errmsg')}")
+        return True
+
+    except Exception as e:
+        raise Exception(f"webhook发送失败: {str(e)}")
+
+
 
 @app.context_processor
 def inject_now():

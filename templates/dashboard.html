@@ -63,6 +63,12 @@
                                         <li class="nav-item" role="presentation">
                                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#feishu" type="button">飞书</button>
                                         </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#wechat" type="button">企业微信</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#webhook" type="button">webhook</button>
+                                        </li>
                                     </ul>
                                     <div class="tab-content p-3">
                                         <div class="tab-pane fade show active" id="smtp">
@@ -125,6 +131,30 @@ Content-Type: application/json
 }
                                             </pre>
                                         </div>
+                                        <div class="tab-pane fade" id="wechat">
+                                            <pre>
+POST {{ request.url_root }}api/notify
+Content-Type: application/json
+
+{
+    "token": "{{ user.token }}",
+    "id": "your_channel_id",
+    "content": "这是一条测试消息"
+}
+                                            </pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="webhook">
+                                            <pre>
+POST {{ request.url_root }}api/notify
+Content-Type: application/json
+
+{
+    "token": "{{ user.token }}",
+    "id": "your_channel_id",
+    "content": "{"msgtype": "text","text": {"content": "hello world"}}" # 根据实际数据填写
+}
+                                            </pre>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -154,6 +184,10 @@ Content-Type: application/json
                                         <i class="bi bi-chat-dots channel-icon text-warning"></i>
                                     {% elif channel.channel_type == 'feishu' %}
                                         <i class="bi bi-chat-square-text channel-icon text-danger"></i>
+                                    {% elif channel.channel_type == 'wechat' %}
+                                        <i class="bi bi-wechat channel-icon text-success"></i>
+                                    {% elif channel.channel_type == 'webhook' %}
+                                        <i class="bi bi-browser-safari channel-icon text-danger"></i>
                                     {% endif %}
                                     {{ channel.channel_id }} ({{ channel.channel_type }})
                                 </div>
@@ -201,7 +235,7 @@ Content-Type: application/json
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">测试内容（填写json中content的内容）</label>
+                        <label class="form-label">测试内容（填写示列请求体中content的内容）</label>
                         <textarea class="form-control" id="testContent" rows="3" required></textarea>
                     </div>
                 </form>

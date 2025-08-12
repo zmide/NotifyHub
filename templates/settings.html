@@ -62,6 +62,12 @@
                                         <li class="nav-item" role="presentation">
                                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#feishu" type="button">飞书</button>
                                         </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#wechat" type="button">企业微信</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#webhook" type="button">webhook</button>
+                                        </li>
                                     </ul>
                                     <div class="tab-content p-3">
                                         <div class="tab-pane fade show active" id="smtp">
@@ -117,6 +123,7 @@
                                         <div class="tab-pane fade" id="dingtalk">
                                             <pre>{
     "webhook_url": "https://oapi.dingtalk.com/robot/send?access_token=xxx",
+    "secret": "SECxxxxx",
     "msg_type": "text",
     "at_mobiles": ["13800138000"]
 }</pre>
@@ -124,6 +131,17 @@
                                         <div class="tab-pane fade" id="feishu">
                                             <pre>{
     "webhook_url": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx"
+}</pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="wechat">
+                                            <pre>{
+    "webhook_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxx",
+    "msg_type": "text"
+}</pre>
+                                        </div>
+                                        <div class="tab-pane fade" id="webhook">
+                                            <pre>{
+    "webhook_url": "webhook地址"
 }</pre>
                                         </div>
                                     </div>
@@ -154,12 +172,18 @@
                 <p class="small">需要阿里云AccessId和AccessKey。</p>
 
                 <h6 class="mt-3"><i class="bi bi-telegram"></i> Telegram</h6>
-                <p class="small">需要API_URL、机器人Token和聊天ID(个人聊天或群组)。</p>
+                <p class="small">需要API_URL、代理、机器人Token和聊天ID(个人聊天或群组)。</p>
 
                 <h6 class="mt-3"><i class="bi bi-chat-dots"></i> 钉钉</h6>
-                <p class="small">需要机器人Webhook URL，可选@特定手机号。</p>
+                 <p class="small">需要钉钉机器人Webhook URL、加签密钥，可选消息类型（text|markdown）@特定手机号。</p>
 
                 <h6 class="mt-3"><i class="bi bi-chat-square-text"></i> 飞书</h6>
+                <p class="small">需要飞书机器人Webhook URL。</p>
+
+                <h6 class="mt-3"><i class="bi bi-wechat"></i> 企业微信</h6>
+                <p class="small">需要企业微信机器人Webhook URL，可选消息类型（text|markdown）。</p>
+
+                <h6 class="mt-3"><i class="bi bi-browser-safari"></i> webhook</h6>
                 <p class="small">需要机器人Webhook URL。</p>
             </div>
         </div>

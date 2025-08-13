@@ -82,6 +82,8 @@ services:
 
   mysql:
     image: mysql:8.0
+    ports:
+      - "3307:3306"
     environment:
       TZ: Asia/Shanghai
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}

@@ -9,7 +9,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_wtf import FlaskForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField
-from wtforms.validators import DataRequired, Email, Length, ValidationError
+from wtforms.validators import DataRequired, Email, Length, ValidationError, EqualTo
 from config import Config
 from email.mime.text import MIMEText
 from email.utils import formataddr
@@ -75,6 +75,10 @@ class RegistrationForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired(), Length(min=4, max=20)])
     email = StringField('邮箱', validators=[DataRequired(), Email()])
     password = PasswordField('密码', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('确认密码', validators=[
+        DataRequired(message='请确认密码'),
+        EqualTo('password', message='两次输入的密码必须一致')
+    ])
     submit = SubmitField('注册')
 
     def validate_username(self, username):

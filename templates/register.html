@@ -10,7 +10,7 @@
                 <h4>用户注册</h4>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" id="registerForm">
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.username.label(class="form-label") }}
@@ -36,7 +36,7 @@
                     </div>
                     <div class="mb-3">
                         {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control") }}
+                        {{ form.password(class="form-control", id="password") }}
                         {% if form.password.errors %}
                             <div class="text-danger">
                                 {% for error in form.password.errors %}
@@ -44,6 +44,24 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.confirm_password.label(class="form-label") }}
+                        {{ form.confirm_password(class="form-control", id="confirm_password") }}
+                        <div id="passwordMatchError" class="text-danger small mt-1" style="display:none;">
+                            两次输入的密码不一致
+                        </div>
+                        {% if form.confirm_password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.confirm_password.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="showPassword">
+                        <label class="form-check-label" for="showPassword">显示密码</label>
                     </div>
                     <div class="d-grid">
                         {{ form.submit(class="btn btn-primary") }}
@@ -56,4 +74,56 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取DOM元素
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const showPasswordCheckbox = document.getElementById('showPassword');
+    const passwordMatchError = document.getElementById('passwordMatchError');
+    const registerForm = document.getElementById('registerForm');
+
+    // 显示/隐藏密码功能
+    showPasswordCheckbox.addEventListener('change', function(e) {
+        const type = e.target.checked ? 'text' : 'password';
+        password.type = type;
+        confirmPassword.type = type;
+    });
+
+    // 实时密码匹配验证
+    function validatePassword() {
+        if (password.value && confirmPassword.value && password.value !== confirmPassword.value) {
+            passwordMatchError.style.display = 'block';
+            confirmPassword.classList.add('is-invalid');
+            return false;
+        } else {
+            passwordMatchError.style.display = 'none';
+            confirmPassword.classList.remove('is-invalid');
+            return true;
+        }
+    }
+
+    // 表单提交前的最终验证
+    registerForm.addEventListener('submit', function(e) {
+        if (!validatePassword()) {
+            e.preventDefault();
+        }
+    });
+
+    // 实时监听密码输入
+    password.addEventListener('input', validatePassword);
+    confirmPassword.addEventListener('input', validatePassword);
+});
+</script>
+
+<style>
+.is-invalid {
+    border-color: #dc3545 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+</style>
 {% endblock %}

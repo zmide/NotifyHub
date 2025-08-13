@@ -5,9 +5,12 @@
     <h1 class="display-4">欢迎使用统一通知平台</h1>
     <p class="lead">一个集成了多种通知渠道的API服务平台</p>
     <hr class="my-4">
-    <p>支持邮件、短信、Telegram、钉钉和飞书等多种通知方式</p>
-    <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}" role="button">登录</a>
-    <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}" role="button">立即注册</a>
-
+    <p>支持邮件、阿里云短信、Telegram、钉钉、飞书、企业微信和Webhook等多种通知方式</p>
+    {% if current_user.is_authenticated %}
+         <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}" role="button">控制台</a>
+    {% else %}
+            <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}" role="button">登录</a>
+            <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}" role="button">立即注册</a>
+    {% endif %}
 </div>
 {% endblock %}

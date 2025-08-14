@@ -78,7 +78,7 @@ Content-Type: application/json
 
 {
     "token": "{{ user.token }}",
-    "id": "your_channel_id",
+    "id": "通道名（创建时填写的）",
     "content": {"to_email":"收件人邮箱","subject":"主题","from_name":"发件人昵称","text_body":"&lt;b&gt;测试通知&lt;/b&gt;&lt;p&gt;这是一条测试消息&lt;/p&gt;"}
 }
                                             </pre>
@@ -90,7 +90,7 @@ Content-Type: application/json
 
 {
     "token": "{{ user.token }}",
-    "id": "your_channel_id",
+    "id": "通道名（创建时填写的）",
     "content": {"phone_numbers": "收件手机号","sign_name": "签名名称","template_code": "模版ID","code":"6666" # code对应模板中的变量，可继续添加}
 }
 </pre>
@@ -102,7 +102,7 @@ Content-Type: application/json
 
 {
     "token": "{{ user.token }}",
-    "id": "your_channel_id",
+    "id": "通道名（创建时填写的）",
     "content": "这是一条测试消息"
 }
                                             </pre>
@@ -114,7 +114,7 @@ Content-Type: application/json
 
 {
     "token": "{{ user.token }}",
-    "id": "your_channel_id",
+    "id": "通道名（创建时填写的）",
     "content": "这是一条测试消息"
 }
                                             </pre>
@@ -126,7 +126,7 @@ Content-Type: application/json
 
 {
     "token": "{{ user.token }}",
-    "id": "your_channel_id",
+    "id": "通道名（创建时填写的）",
     "content": "这是一条测试消息"
 }
                                             </pre>
@@ -138,7 +138,7 @@ Content-Type: application/json
 
 {
     "token": "{{ user.token }}",
-    "id": "your_channel_id",
+    "id": "通道名（创建时填写的）",
     "content": "这是一条测试消息"
 }
                                             </pre>
@@ -150,7 +150,7 @@ Content-Type: application/json
 
 {
     "token": "{{ user.token }}",
-    "id": "your_channel_id",
+    "id": "通道名（创建时填写的）",
     "content": "{"msgtype": "text","text": {"content": "hello world"}}" # 根据实际数据填写
 }
                                             </pre>
@@ -175,7 +175,7 @@ Content-Type: application/json
                                         <thead>
                                             <tr>
                                                 <th>时间</th>
-                                                <th>通道</th>
+                                                <th>通道名</th>
                                                 <th>类型</th>
                                                 <th>状态</th>
                                                 <th>操作</th>
@@ -211,7 +211,7 @@ Content-Type: application/json
                                                     <td id="logTime"></td>
                                                 </tr>
                                                 <tr>
-                                                    <th>通道ID:</th>
+                                                    <th>通道名:</th>
                                                     <td id="logChannelId"></td>
                                                 </tr>
                                                 <tr>
@@ -249,42 +249,47 @@ Content-Type: application/json
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5><i class="bi bi-collection"></i> 我的通知通道</h5>
+                <h5><i class="bi bi-collection"></i> 我的通知通道：通道名称（通道类型）</h5>
             </div>
             <div class="card-body">
                 {% if user.channels %}
                     <ul class="list-group">
                         {% for channel in user.channels %}
-                            <!-- 通道列表项 -->
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    {% if channel.channel_type == 'smtp' %}
-                                        <i class="bi bi-envelope channel-icon text-primary"></i>
-                                    {% elif channel.channel_type == 'sms' %}
-                                        <i class="bi bi-phone channel-icon text-success"></i>
-                                    {% elif channel.channel_type == 'tg' %}
-                                        <i class="bi bi-telegram channel-icon text-info"></i>
-                                    {% elif channel.channel_type == 'dingtalk' %}
-                                        <i class="bi bi-chat-dots channel-icon text-warning"></i>
-                                    {% elif channel.channel_type == 'feishu' %}
-                                        <i class="bi bi-chat-square-text channel-icon text-danger"></i>
-                                    {% elif channel.channel_type == 'wechat' %}
-                                        <i class="bi bi-wechat channel-icon text-success"></i>
-                                    {% elif channel.channel_type == 'webhook' %}
-                                        <i class="bi bi-browser-safari channel-icon text-danger"></i>
-                                    {% endif %}
-                                    {{ channel.channel_id }} ({{ channel.channel_type }})
-                                </div>
-                                <div>
-                                    <a href="{{ url_for('edit_channel', channel_id=channel.id) }}"
-                                       class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <span class="badge bg-secondary">{{ channel.created_at.strftime('%Y-%m-%d') }}</span>
-                                </div>
-                            </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if channel.channel_type == 'smtp' %}
+                                    <i class="bi bi-envelope channel-icon text-primary"></i>
+                                    {{ channel.channel_id }} <span class="text-muted">(SMTP邮件)</span>
+                                {% elif channel.channel_type == 'sms' %}
+                                    <i class="bi bi-phone channel-icon text-success"></i>
+                                    {{ channel.channel_id }} <span class="text-muted">(阿里云短信)</span>
+                                {% elif channel.channel_type == 'tg' %}
+                                    <i class="bi bi-telegram channel-icon text-info"></i>
+                                    {{ channel.channel_id }} <span class="text-muted">(Telegram)</span>
+                                {% elif channel.channel_type == 'dingtalk' %}
+                                    <i class="bi bi-chat-dots channel-icon text-warning"></i>
+                                    {{ channel.channel_id }} <span class="text-muted">(钉钉)</span>
+                                {% elif channel.channel_type == 'feishu' %}
+                                    <i class="bi bi-chat-square-text channel-icon text-danger"></i>
+                                    {{ channel.channel_id }} <span class="text-muted">(飞书)</span>
+                                {% elif channel.channel_type == 'wechat' %}
+                                    <i class="bi bi-wechat channel-icon text-success"></i>
+                                    {{ channel.channel_id }} <span class="text-muted">(企业微信)</span>
+                                {% elif channel.channel_type == 'webhook' %}
+                                    <i class="bi bi-browser-safari channel-icon text-danger"></i>
+                                    {{ channel.channel_id }} <span class="text-muted">(webhook)</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{{ url_for('edit_channel', channel_id=channel.id) }}"
+                                   class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <span class="badge bg-secondary">{{ channel.created_at.strftime('%Y-%m-%d') }}</span>
+                            </div>
+                        </li>
+                    {% endfor %}
 
-                        {% endfor %}
                     </ul>
                 {% else %}
                     <div class="alert alert-warning">
@@ -314,7 +319,19 @@ Content-Type: application/json
                         <select class="form-select" id="testChannel" required>
                             <option value="">-- 选择通道 --</option>
                             {% for channel in user.channels %}
-                                <option value="{{ channel.channel_id }}">{{ channel.channel_id }} ({{ channel.channel_type }})</option>
+                                <option value="{{ channel.channel_id }}">
+                                    {{ channel.channel_id }} (
+                                    {% if channel.channel_type == 'smtp' %}SMTP邮件
+                                    {% elif channel.channel_type == 'sms' %}阿里云短信
+                                    {% elif channel.channel_type == 'tg' %}Telegram
+                                    {% elif channel.channel_type == 'dingtalk' %}钉钉
+                                    {% elif channel.channel_type == 'feishu' %}飞书
+                                    {% elif channel.channel_type == 'wechat' %}企业微信
+                                    {% elif channel.channel_type == 'webhook' %}webhook
+                                    {% else %}{{ channel.channel_type }}
+                                    {% endif %}
+                                    )
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -326,7 +343,9 @@ Content-Type: application/json
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="testNotification()">发送测试</button>
+                <button type="button" class="btn btn-primary" id="sendTestBtn" onclick="testNotification()">
+                    <i class="bi bi-play-circle"></i> 发送测试
+                </button>
             </div>
         </div>
     </div>
@@ -374,11 +393,16 @@ Content-Type: application/json
     function testNotification() {
         const channelId = document.getElementById('testChannel').value;
         const content = document.getElementById('testContent').value;
+        const sendBtn = document.getElementById('sendTestBtn');
 
         if (!channelId || !content) {
             alert('请选择通道并输入测试内容');
             return;
         }
+
+        // 禁用按钮并改变状态
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="bi bi-hourglass"></i> 发送中...';
 
         const data = {
             token: '{{ user.token }}',
@@ -395,107 +419,223 @@ Content-Type: application/json
         })
         .then(response => response.json())
         .then(data => {
+            // 无论成功失败都刷新日志
+            loadLogs(currentLogPage);
+
+            // 恢复按钮状态
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="bi bi-play-circle"></i> 发送测试';
+
             if (data.status === 'success') {
-                alert('测试通知发送成功！');
-                const modal = bootstrap.Modal.getInstance(document.getElementById('testModal'));
-                modal.hide();
+                // 显示成功提示
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    测试通知发送成功！
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                // 插入到表单后面
+                const form = document.getElementById('testForm');
+                form.appendChild(alertDiv);
+
+                // 5秒后自动消失
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alertDiv);
+                    bsAlert.close();
+                }, 5000);
             } else {
-                alert('发送失败: ' + data.message);
+                // 显示错误提示
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    发送失败: ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                const form = document.getElementById('testForm');
+                form.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alertDiv);
+                    bsAlert.close();
+                }, 5000);
             }
         })
         .catch(error => {
-            alert('发生错误: ' + error);
+            // 恢复按钮状态
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="bi bi-play-circle"></i> 发送测试';
+
+            // 显示网络错误提示
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+            alertDiv.innerHTML = `
+                发生错误: ${error}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            const form = document.getElementById('testForm');
+            form.appendChild(alertDiv);
+
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alertDiv);
+                bsAlert.close();
+            }, 5000);
+
+            // 刷新日志列表
+            loadLogs(currentLogPage);
         });
     }
+
     // 日志相关功能
-let currentLogPage = 1;
-const logsPerPage = 20;
+    let currentLogPage = 1;
+    const logsPerPage = 20;
 
-function loadLogs(page = 1, searchQuery = '') {
-    currentLogPage = page;
-    const params = new URLSearchParams({
-        page: page,
-        per_page: logsPerPage,
-        search: searchQuery
-    });
-
-    fetch(`/api/logs?${params.toString()}`)
-        .then(response => response.json())
-        .then(data => {
-            const logTableBody = document.getElementById('logTableBody');
-            logTableBody.innerHTML = '';
-
-            if (data.logs.length === 0) {
-                logTableBody.innerHTML = '<tr><td colspan="5" class="text-center">没有找到日志记录</td></tr>';
-                return;
-            }
-
-            data.logs.forEach(log => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${new Date(log.timestamp).toLocaleString()}</td>
-                    <td>${log.channel_id}</td>
-                    <td><span class="badge bg-secondary">${log.channel_type}</span></td>
-                    <td>
-                        <span class="badge ${log.status === 'success' ? 'bg-success' : 'bg-danger'}">
-                            ${log.status === 'success' ? '成功' : '失败'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="showLogDetail(${log.id})">
-                            <i class="bi bi-eye"></i> 详情
-                        </button>
-                    </td>
-                `;
-                logTableBody.appendChild(row);
-            });
-
-            // 更新分页
-            updatePagination(data.total, data.pages);
+    // 在 loadLogs 函数中修改
+    function loadLogs(page = 1, searchQuery = '') {
+        currentLogPage = page;
+        const params = new URLSearchParams({
+            page: page,
+            per_page: logsPerPage,
+            search: searchQuery
         });
-}
 
-function updatePagination(totalLogs, totalPages) {
-    const pagination = document.getElementById('logPagination');
-    pagination.innerHTML = '';
+        fetch(`/api/logs?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                const logTableBody = document.getElementById('logTableBody');
+                logTableBody.innerHTML = '';
 
-    // 上一页按钮
-    const prevLi = document.createElement('li');
-    prevLi.className = `page-item ${currentLogPage === 1 ? 'disabled' : ''}`;
-    prevLi.innerHTML = `<a class="page-link" href="#" onclick="loadLogs(${currentLogPage - 1})">上一页</a>`;
-    pagination.appendChild(prevLi);
+                if (data.logs.length === 0) {
+                    logTableBody.innerHTML = '<tr><td colspan="5" class="text-center">没有找到日志记录</td></tr>';
+                    return;
+                }
 
-    // 页码按钮
-    const startPage = Math.max(1, currentLogPage - 2);
-    const endPage = Math.min(totalPages, startPage + 4);
+                data.logs.forEach(log => {
+                    const row = document.createElement('tr');
 
-    for (let i = startPage; i <= endPage; i++) {
-        const pageLi = document.createElement('li');
-        pageLi.className = `page-item ${i === currentLogPage ? 'active' : ''}`;
-        pageLi.innerHTML = `<a class="page-link" href="#" onclick="loadLogs(${i})">${i}</a>`;
-        pagination.appendChild(pageLi);
+                    // 转换通道类型为全名
+                    let channelTypeName = '';
+                    switch(log.channel_type) {
+                        case 'smtp':
+                            channelTypeName = 'SMTP邮件';
+                            break;
+                        case 'sms':
+                            channelTypeName = '阿里云短信';
+                            break;
+                        case 'tg':
+                            channelTypeName = 'Telegram';
+                            break;
+                        case 'dingtalk':
+                            channelTypeName = '钉钉';
+                            break;
+                        case 'feishu':
+                            channelTypeName = '飞书';
+                            break;
+                        case 'wechat':
+                            channelTypeName = '企业微信';
+                            break;
+                        case 'webhook':
+                            channelTypeName = 'webhook';
+                            break;
+                        default:
+                            channelTypeName = log.channel_type;
+                    }
+
+                    row.innerHTML = `
+                        <td>${new Date(log.timestamp).toLocaleString()}</td>
+                        <td>${log.channel_id}</td>
+                        <td><span class="badge bg-secondary">${channelTypeName}</span></td>
+                        <td>
+                            <span class="badge ${log.status === 'success' ? 'bg-success' : 'bg-danger'}">
+                                ${log.status === 'success' ? '成功' : '失败'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="showLogDetail(${log.id})">
+                                <i class="bi bi-eye"></i> 详情
+                            </button>
+                        </td>
+                    `;
+                    logTableBody.appendChild(row);
+                });
+
+                // 更新分页
+                updatePagination(data.total, data.pages);
+            });
     }
 
-    // 下一页按钮
-    const nextLi = document.createElement('li');
-    nextLi.className = `page-item ${currentLogPage === totalPages ? 'disabled' : ''}`;
-    nextLi.innerHTML = `<a class="page-link" href="#" onclick="loadLogs(${currentLogPage + 1})">下一页</a>`;
-    pagination.appendChild(nextLi);
 
-    // 显示总数
-    const infoLi = document.createElement('li');
-    infoLi.className = 'page-item disabled';
-    infoLi.innerHTML = `<span class="page-link">共 ${totalLogs} 条</span>`;
-    pagination.appendChild(infoLi);
-}
+    function updatePagination(totalLogs, totalPages) {
+        const pagination = document.getElementById('logPagination');
+        pagination.innerHTML = '';
 
-function showLogDetail(logId) {
+        // 上一页按钮
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentLogPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="loadLogs(${currentLogPage - 1})">上一页</a>`;
+        pagination.appendChild(prevLi);
+
+        // 页码按钮
+        const startPage = Math.max(1, currentLogPage - 2);
+        const endPage = Math.min(totalPages, startPage + 4);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageLi = document.createElement('li');
+            pageLi.className = `page-item ${i === currentLogPage ? 'active' : ''}`;
+            pageLi.innerHTML = `<a class="page-link" href="#" onclick="loadLogs(${i})">${i}</a>`;
+            pagination.appendChild(pageLi);
+        }
+
+        // 下一页按钮
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentLogPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="loadLogs(${currentLogPage + 1})">下一页</a>`;
+        pagination.appendChild(nextLi);
+
+        // 显示总数
+        const infoLi = document.createElement('li');
+        infoLi.className = 'page-item disabled';
+        infoLi.innerHTML = `<span class="page-link">共 ${totalLogs} 条</span>`;
+        pagination.appendChild(infoLi);
+    }
+
+    function showLogDetail(logId) {
     fetch(`/api/logs/${logId}`)
         .then(response => response.json())
         .then(log => {
+            // 转换通道类型为全名
+            let channelTypeName = '';
+            switch(log.channel_type) {
+                case 'smtp':
+                    channelTypeName = 'SMTP邮件';
+                    break;
+                case 'sms':
+                    channelTypeName = '阿里云短信';
+                    break;
+                case 'tg':
+                    channelTypeName = 'Telegram';
+                    break;
+                case 'dingtalk':
+                    channelTypeName = '钉钉';
+                    break;
+                case 'feishu':
+                    channelTypeName = '飞书';
+                    break;
+                case 'wechat':
+                    channelTypeName = '企业微信';
+                    break;
+                case 'webhook':
+                    channelTypeName = 'webhook';
+                    break;
+                default:
+                    channelTypeName = log.channel_type;
+            }
+
             document.getElementById('logTime').textContent = new Date(log.timestamp).toLocaleString();
             document.getElementById('logChannelId').textContent = log.channel_id;
-            document.getElementById('logChannelType').textContent = log.channel_type;
+            document.getElementById('logChannelType').textContent = channelTypeName;  // 这里使用转换后的全名
             document.getElementById('logStatus').innerHTML = `
                 <span class="badge ${log.status === 'success' ? 'bg-success' : 'bg-danger'}">
                     ${log.status === 'success' ? '成功' : '失败'}
@@ -525,17 +665,18 @@ function showLogDetail(logId) {
             const modal = new bootstrap.Modal(document.getElementById('logDetailModal'));
             modal.show();
         });
-}
+    }
 
-function searchLogs() {
-    const searchQuery = document.getElementById('logSearch').value;
-    loadLogs(1, searchQuery);
-}
 
-// 页面加载时获取日志
-document.addEventListener('DOMContentLoaded', function() {
-    loadLogs(1);
-});
+    function searchLogs() {
+        const searchQuery = document.getElementById('logSearch').value;
+        loadLogs(1, searchQuery);
+    }
+
+    // 页面加载时获取日志
+    document.addEventListener('DOMContentLoaded', function() {
+        loadLogs(1);
+    });
 
 </script>
 {% endblock %}

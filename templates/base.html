@@ -31,6 +31,17 @@
             max-height: 300px;
             overflow-y: auto;
         }
+        /* 添加旋转动画 */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .bi-hourglass {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
 
     </style>
 </head>

@@ -114,7 +114,7 @@ class LoginForm(FlaskForm):
 
 
 class ChannelForm(FlaskForm):
-    channel_id = StringField('通道ID', validators=[DataRequired(), Length(min=2, max=50)])
+    channel_id = StringField('通道名称', validators=[DataRequired(), Length(min=2, max=50)])
     channel_type = SelectField('通道类型', choices=[
         ('smtp', 'SMTP邮件'),
         ('sms', '阿里云短信'),

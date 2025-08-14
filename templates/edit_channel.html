@@ -9,7 +9,16 @@
 
         <div class="card mb-4">
             <div class="card-header">
-                <h5>{{ channel.channel_id }} ({{ channel.channel_type }})</h5>
+                <h5>{{ channel.channel_id }} (
+                    {% if channel.channel_type == 'smtp' %}SMTP邮件
+                    {% elif channel.channel_type == 'sms' %}阿里云短信
+                    {% elif channel.channel_type == 'tg' %}Telegram
+                    {% elif channel.channel_type == 'dingtalk' %}钉钉
+                    {% elif channel.channel_type == 'feishu' %}飞书
+                    {% elif channel.channel_type == 'wechat' %}企业微信
+                    {% elif channel.channel_type == 'webhook' %}webhook
+                    {% endif %}
+                )</h5>
             </div>
             <div class="card-body">
                 <form method="POST">

@@ -21,6 +21,7 @@ import hmac
 import hashlib
 import time
 import urllib.parse
+import pytz
 
 # 初始化应用
 app = Flask(__name__)
@@ -47,7 +48,7 @@ class NotificationLog(db.Model):
     request_data = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(10), nullable=False)
     error_message = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Shanghai')), index=True)
     ip_address = db.Column(db.String(45))
 
 
@@ -57,7 +58,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     token = db.Column(db.String(200), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Shanghai')), index=True)
     channels = db.relationship('NotificationChannel', backref='user', lazy=True)
 
 
@@ -67,7 +68,7 @@ class NotificationChannel(db.Model):
     channel_id = db.Column(db.String(80), nullable=False)
     channel_type = db.Column(db.String(20), nullable=False)
     config = db.Column(db.Text, nullable=False)  # 存储为JSON字符串
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Shanghai')), index=True)
 
     def get_decrypted_config(self):
         """获取解密后的配置"""
@@ -210,7 +211,7 @@ def settings():
             channel_id=form.channel_id.data
         ).first()
         if existing:
-            flash('通道ID已存在，请使用其他ID', 'danger')
+            flash('通道名称已存在，请使用其他通道名称', 'danger')
         else:
             channel = NotificationChannel(
                 user_id=current_user.id,
@@ -240,7 +241,7 @@ def edit_channel(channel_id):
 
     # POST请求处理（提交表单时）
     if form.validate_on_submit():
-        # 检查通道ID是否已存在
+        # 检查通道名称是否已存在
         existing = NotificationChannel.query.filter(
             NotificationChannel.user_id == current_user.id,
             NotificationChannel.channel_id == form.channel_id.data,
@@ -248,7 +249,7 @@ def edit_channel(channel_id):
         ).first()
 
         if existing:
-            flash('通道ID已存在，请使用其他ID', 'danger')
+            flash('通道名称已存在，请使用其他通道名称', 'danger')
         else:
             channel.channel_id = form.channel_id.data
             channel.channel_type = form.channel_type.data
@@ -314,7 +315,7 @@ def notify():
             channel_id=data['id']
         ).first()
         if not channel:
-            return jsonify({'status': 'error', 'message': '通道ID不存在'}), 404
+            return jsonify({'status': 'error', 'message': '通道名称不存在'}), 404
 
         # 现在可以安全地创建日志记录
         log_entry = NotificationLog(
@@ -324,7 +325,7 @@ def notify():
             request_data=json.dumps(data, ensure_ascii=False),
             status='failed',  # 默认设为失败，成功时更新
             ip_address=ip_address,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(pytz.timezone('Asia/Shanghai'))
         )
         db.session.add(log_entry)
         db.session.flush()  # 获取log_entry.id但不提交事务
@@ -423,7 +424,6 @@ def get_logs():
         'current_page': page
     })
 
-
 @app.route('/api/logs/<int:log_id>', methods=['GET'])
 @login_required
 def get_log_detail(log_id):
@@ -442,6 +442,46 @@ def get_log_detail(log_id):
         'request_data': log.request_data,
         'error_message': log.error_message,
         'ip_address': log.ip_address
+    })
+
+@app.route('/api/logs/<int:log_id>', methods=['DELETE'])
+@login_required
+def delete_log(log_id):
+    log = NotificationLog.query.get_or_404(log_id)
+
+    # 检查权限
+    if log.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': '无权删除该日志'}), 403
+
+    db.session.delete(log)
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': '日志已删除'})
+
+
+@app.route('/api/logs/batch', methods=['DELETE'])
+@login_required
+def delete_logs_batch():
+    data = request.get_json()
+    if not data or 'log_ids' not in data:
+        return jsonify({'status': 'error', 'message': '缺少必要参数'}), 400
+
+    # 查询并验证所有日志都属于当前用户
+    logs = NotificationLog.query.filter(
+        NotificationLog.id.in_(data['log_ids']),
+        NotificationLog.user_id == current_user.id
+    ).all()
+
+    if len(logs) != len(data['log_ids']):
+        return jsonify({'status': 'error', 'message': '包含无权删除的日志'}), 403
+
+    # 批量删除
+    for log in logs:
+        db.session.delete(log)
+    db.session.commit()
+
+    return jsonify({
+        'status': 'success',
+        'message': f'成功删除 {len(logs)} 条日志'
     })
 
 

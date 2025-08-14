@@ -159,21 +159,28 @@ Content-Type: application/json
                                 </div>
                             </div>
                         </div>
+                        <!-- API调用日志表单 -->
                         <div class="card mt-4">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5><i class="bi bi-journal-text"></i> API调用日志</h5>
-                                <div class="input-group" style="width: 300px;">
-                                    <input type="text" class="form-control" id="logSearch" placeholder="搜索日志...">
-                                    <button class="btn btn-outline-secondary" onclick="searchLogs()">
-                                        <i class="bi bi-search"></i>
+                                   <button class="btn btn-sm btn-danger me-2" id="deleteSelectedBtn" style="display: none;">
+                                        <i class="bi bi-trash"></i> 删除选中
                                     </button>
-                                </div>
+                                    <div class="input-group" style="width: 300px;">
+                                        <input type="text" class="form-control" id="logSearch" placeholder="搜索日志...">
+                                        <button class="btn btn-outline-secondary" onclick="searchLogs()">
+                                            <i class="bi bi-search"></i>
+                                        </button>
+                                    </div>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-hover">
                                         <thead>
                                             <tr>
+                                                <th width="40">
+                                                    <input type="checkbox" id="selectAllCheckbox">
+                                                </th>
                                                 <th>时间</th>
                                                 <th>通道名</th>
                                                 <th>类型</th>
@@ -193,6 +200,7 @@ Content-Type: application/json
                                 </nav>
                             </div>
                         </div>
+
 
                         <!-- 日志详情模态框 -->
                         <div class="modal fade" id="logDetailModal" tabindex="-1">
@@ -492,7 +500,8 @@ Content-Type: application/json
     let currentLogPage = 1;
     const logsPerPage = 20;
 
-    // 在 loadLogs 函数中修改
+    let selectedLogs = new Set();
+
     function loadLogs(page = 1, searchQuery = '') {
         currentLogPage = page;
         const params = new URLSearchParams({
@@ -508,42 +517,32 @@ Content-Type: application/json
                 logTableBody.innerHTML = '';
 
                 if (data.logs.length === 0) {
-                    logTableBody.innerHTML = '<tr><td colspan="5" class="text-center">没有找到日志记录</td></tr>';
+                    logTableBody.innerHTML = '<tr><td colspan="6" class="text-center">没有找到日志记录</td></tr>';
                     return;
                 }
 
                 data.logs.forEach(log => {
                     const row = document.createElement('tr');
+                    row.dataset.logId = log.id;
 
                     // 转换通道类型为全名
                     let channelTypeName = '';
                     switch(log.channel_type) {
-                        case 'smtp':
-                            channelTypeName = 'SMTP邮件';
-                            break;
-                        case 'sms':
-                            channelTypeName = '阿里云短信';
-                            break;
-                        case 'tg':
-                            channelTypeName = 'Telegram';
-                            break;
-                        case 'dingtalk':
-                            channelTypeName = '钉钉';
-                            break;
-                        case 'feishu':
-                            channelTypeName = '飞书';
-                            break;
-                        case 'wechat':
-                            channelTypeName = '企业微信';
-                            break;
-                        case 'webhook':
-                            channelTypeName = 'webhook';
-                            break;
-                        default:
-                            channelTypeName = log.channel_type;
+                        case 'smtp': channelTypeName = 'SMTP邮件'; break;
+                        case 'sms': channelTypeName = '阿里云短信'; break;
+                        case 'tg': channelTypeName = 'Telegram'; break;
+                        case 'dingtalk': channelTypeName = '钉钉'; break;
+                        case 'feishu': channelTypeName = '飞书'; break;
+                        case 'wechat': channelTypeName = '企业微信'; break;
+                        case 'webhook': channelTypeName = 'webhook'; break;
+                        default: channelTypeName = log.channel_type;
                     }
 
                     row.innerHTML = `
+                        <td>
+                            <input type="checkbox" class="log-checkbox" data-log-id="${log.id}"
+                                   onchange="toggleLogSelection(${log.id}, this.checked)">
+                        </td>
                         <td>${new Date(log.timestamp).toLocaleString()}</td>
                         <td>${log.channel_id}</td>
                         <td><span class="badge bg-secondary">${channelTypeName}</span></td>
@@ -553,8 +552,11 @@ Content-Type: application/json
                             </span>
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="showLogDetail(${log.id})">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="showLogDetail(${log.id})">
                                 <i class="bi bi-eye"></i> 详情
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSingleLog(${log.id})">
+                                <i class="bi bi-trash"></i> 删除
                             </button>
                         </td>
                     `;
@@ -566,6 +568,102 @@ Content-Type: application/json
             });
     }
 
+    // 添加删除相关函数
+    function toggleLogSelection(logId, isChecked) {
+        if (isChecked) {
+            selectedLogs.add(logId);
+        } else {
+            selectedLogs.delete(logId);
+        }
+        updateDeleteButton();
+    }
+
+    function updateDeleteButton() {
+        const deleteBtn = document.getElementById('deleteSelectedBtn');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+        if (selectedLogs.size > 0) {
+            deleteBtn.style.display = 'inline-block';
+        } else {
+            deleteBtn.style.display = 'none';
+        }
+
+        // 更新全选复选框状态
+        const allCheckboxes = document.querySelectorAll('.log-checkbox');
+        const allChecked = allCheckboxes.length > 0 &&
+                          Array.from(allCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+    }
+
+    function deleteSingleLog(logId) {
+        if (!confirm('确定要删除这条日志吗？')) {
+            return;
+        }
+
+        fetch(`/api/logs/${logId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                // 从选中集合中移除
+                selectedLogs.delete(logId);
+                // 重新加载当前页日志
+                loadLogs(currentLogPage);
+            } else {
+                alert('删除失败');
+            }
+        });
+    }
+
+    function deleteSelectedLogs() {
+        if (selectedLogs.size === 0) {
+            alert('请先选择要删除的日志');
+            return;
+        }
+
+        if (!confirm(`确定要删除选中的 ${selectedLogs.size} 条日志吗？`)) {
+            return;
+        }
+
+        fetch('/api/logs/batch', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ log_ids: Array.from(selectedLogs) })
+        })
+        .then(response => {
+            if (response.ok) {
+                // 清空选中集合
+                selectedLogs.clear();
+                // 重新加载当前页日志
+                loadLogs(currentLogPage);
+            } else {
+                alert('批量删除失败');
+            }
+        });
+    }
+
+    // 全选/取消全选功能
+    document.getElementById('selectAllCheckbox').addEventListener('change', function(e) {
+        const isChecked = e.target.checked;
+        const checkboxes = document.querySelectorAll('.log-checkbox');
+
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = isChecked;
+            const logId = parseInt(checkbox.dataset.logId);
+            if (isChecked) {
+                selectedLogs.add(logId);
+            } else {
+                selectedLogs.delete(logId);
+            }
+        });
+
+        updateDeleteButton();
+    });
+
+    // 绑定批量删除按钮点击事件
+    document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelectedLogs);
 
     function updatePagination(totalLogs, totalPages) {
         const pagination = document.getElementById('logPagination');

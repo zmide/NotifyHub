@@ -39,6 +39,18 @@ def init_db():
 
 
 # 数据库模型
+class NotificationLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    channel_id = db.Column(db.String(80), nullable=False)
+    channel_type = db.Column(db.String(20), nullable=False)
+    request_data = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(10), nullable=False)
+    error_message = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    ip_address = db.Column(db.String(45))
+
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -282,46 +294,156 @@ def delete_channel(channel_id):
 
 @app.route('/api/notify', methods=['POST'])
 def notify():
+    # 获取请求数据和IP地址
     data = request.get_json()
-    if not data or 'token' not in data or 'id' not in data or 'content' not in data:
-        return jsonify({'status': 'error', 'message': '缺少必要参数'}), 400
-
-    user = User.query.filter_by(token=data['token']).first()
-    if not user:
-        return jsonify({'status': 'error', 'message': '无效token'}), 401
-
-    channel = NotificationChannel.query.filter_by(
-        user_id=user.id,
-        channel_id=data['id']
-    ).first()
-    if not channel:
-        return jsonify({'status': 'error', 'message': '通道ID不存在'}), 404
+    ip_address = request.remote_addr
 
     try:
-        # 使用解密后的配置
-        config = channel.get_decrypted_config()
-        result = None
+        # 验证基本参数
+        if not data or 'token' not in data or 'id' not in data or 'content' not in data:
+            return jsonify({'status': 'error', 'message': '缺少必要参数'}), 400
 
-        if channel.channel_type == 'smtp':
-            result = send_email(config, data['content'])
-        elif channel.channel_type == 'sms':
-            result = send_sms(config, data['content'])
-        elif channel.channel_type == 'tg':
-            result = send_telegram(config, data['content'])
-        elif channel.channel_type == 'dingtalk':
-            result = send_dingtalk(config, data['content'])
-        elif channel.channel_type == 'feishu':
-            result = send_feishu(config, data['content'])
-        elif channel.channel_type == 'wechat':
-            result = send_wechat(config, data['content'])
-        elif channel.channel_type == 'webhook':
-            result = send_webhook(config, data['content'])
-        else:
-            return jsonify({'status': 'error', 'message': '不支持的通道类型'}), 400
+        # 验证用户token
+        user = User.query.filter_by(token=data['token']).first()
+        if not user:
+            return jsonify({'status': 'error', 'message': '无效token'}), 401
 
-        return jsonify({'status': 'success', 'message': '通知已发送'})
+        # 验证通道是否存在
+        channel = NotificationChannel.query.filter_by(
+            user_id=user.id,
+            channel_id=data['id']
+        ).first()
+        if not channel:
+            return jsonify({'status': 'error', 'message': '通道ID不存在'}), 404
+
+        # 现在可以安全地创建日志记录
+        log_entry = NotificationLog(
+            user_id=user.id,  # 使用已验证的用户ID
+            channel_id=data.get('id', ''),
+            channel_type=channel.channel_type,
+            request_data=json.dumps(data, ensure_ascii=False),
+            status='failed',  # 默认设为失败，成功时更新
+            ip_address=ip_address,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(log_entry)
+        db.session.flush()  # 获取log_entry.id但不提交事务
+
+        try:
+            # 使用解密后的配置
+            config = channel.get_decrypted_config()
+            result = None
+
+            # 根据通道类型调用不同的发送方法
+            if channel.channel_type == 'smtp':
+                result = send_email(config, data['content'])
+            elif channel.channel_type == 'sms':
+                result = send_sms(config, data['content'])
+            elif channel.channel_type == 'tg':
+                result = send_telegram(config, data['content'])
+            elif channel.channel_type == 'dingtalk':
+                result = send_dingtalk(config, data['content'])
+            elif channel.channel_type == 'feishu':
+                result = send_feishu(config, data['content'])
+            elif channel.channel_type == 'wechat':
+                result = send_wechat(config, data['content'])
+            elif channel.channel_type == 'webhook':
+                result = send_webhook(config, data['content'])
+            else:
+                error_msg = '不支持的通道类型'
+                log_entry.error_message = error_msg
+                db.session.commit()
+                return jsonify({'status': 'error', 'message': error_msg}), 400
+
+            # 发送成功，更新日志状态
+            log_entry.status = 'success'
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': '通知已发送'})
+
+        except Exception as e:
+            # 发送过程中出现异常
+            error_msg = str(e)
+            log_entry.status = 'failed'
+            log_entry.error_message = error_msg
+            db.session.commit()
+            app.logger.error(f"通知发送失败: {error_msg}", exc_info=True)
+            return jsonify({'status': 'error', 'message': error_msg}), 500
+
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        # 参数验证过程中出现异常
+        error_msg = str(e)
+        app.logger.error(f"通知处理失败: {error_msg}", exc_info=True)
+        return jsonify({'status': 'error', 'message': error_msg}), 400
+
+
+@app.route('/api/logs', methods=['GET'])
+@login_required
+def get_logs():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    search_query = request.args.get('search', '').strip()
+
+    # 构建基础查询
+    query = NotificationLog.query.filter_by(user_id=current_user.id)
+
+    # 添加搜索条件
+    if search_query:
+        query = query.filter(
+            db.or_(
+                NotificationLog.channel_id.ilike(f'%{search_query}%'),
+                NotificationLog.channel_type.ilike(f'%{search_query}%'),
+                NotificationLog.error_message.ilike(f'%{search_query}%'),
+                NotificationLog.request_data.ilike(f'%{search_query}%'),
+                NotificationLog.ip_address.ilike(f'%{search_query}%')
+            )
+        )
+
+    # 按时间降序排序并分页
+    logs = query.order_by(NotificationLog.timestamp.desc()).paginate(
+        page=page, per_page=per_page, error_out=False)
+
+    # 准备返回数据
+    logs_data = []
+    for log in logs.items:
+        logs_data.append({
+            'id': log.id,
+            'channel_id': log.channel_id,
+            'channel_type': log.channel_type,
+            'status': log.status,
+            'timestamp': log.timestamp.isoformat(),
+            'request_data': log.request_data,
+            'error_message': log.error_message,
+            'ip_address': log.ip_address
+        })
+
+    return jsonify({
+        'logs': logs_data,
+        'total': logs.total,
+        'pages': logs.pages,
+        'current_page': page
+    })
+
+
+@app.route('/api/logs/<int:log_id>', methods=['GET'])
+@login_required
+def get_log_detail(log_id):
+    log = NotificationLog.query.get_or_404(log_id)
+
+    # 检查权限
+    if log.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': '无权访问该日志'}), 403
+
+    return jsonify({
+        'id': log.id,
+        'channel_id': log.channel_id,
+        'channel_type': log.channel_type,
+        'status': log.status,
+        'timestamp': log.timestamp.isoformat(),
+        'request_data': log.request_data,
+        'error_message': log.error_message,
+        'ip_address': log.ip_address
+    })
+
 
 def send_email(config, content):
     """发送邮件通知（支持国际化地址和完整发件人格式）"""

@@ -776,7 +776,7 @@ def send_webhook(config, content):
         result = response.json()
 
         if result.get('code') != 200:
-            raise Exception(f"webhook发送失败: {result.get('msg')}，以返回的code及msg作为发送成功与否的标准，当前HTTP状态码：{response.status_code}")
+            raise Exception(f"webhook发送失败: {result.get('msg')}，以返回的code及msg作为发送成功与否的标准")
         return True
 
     except Exception as e:

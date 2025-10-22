@@ -19,6 +19,4 @@ wtforms==3.1.2
 cryptography==44.0.3
 
 # 数据库相关
-PyMySQL==1.1.0
-mysqlclient==2.2.1
 SQLAlchemy==2.0.25

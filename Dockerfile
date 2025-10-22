@@ -17,8 +17,10 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         gcc \
         python3-dev \
-        default-libmysqlclient-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# 创建非root用户
+RUN groupadd -r notifyhub && useradd -r -g notifyhub notifyhub
 
 WORKDIR /app
 
@@ -30,6 +32,11 @@ RUN python -m pip install --no-cache-dir --upgrade pip==23.0.1 && \
         --trusted-host pypi.tuna.tsinghua.edu.cn
 
 COPY . .
+
+# 创建数据目录并设置权限
+RUN mkdir -p /app/data && \
+    chown -R notifyhub:notifyhub /app
+USER notifyhub
 
 ENV FLASK_APP=app.py \
     FLASK_DEBUG=0

@@ -1,7 +1,7 @@
 # 核心依赖（固定兼容版本）
 Flask==2.2.5
 Werkzeug==2.3.7
-Flask-WTF==1.2.1
+Flask-WTF==1.1.1
 gunicorn==21.2.0
 markupsafe==2.1.3
 

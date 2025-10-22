@@ -787,9 +787,7 @@ def send_webhook(config, content):
 @app.context_processor
 def inject_now():
     return {'now': datetime.now()}
-# 初始化数据库
-with app.app_context():
-    db.create_all()
+# 数据库初始化通过 flask init-db 命令进行
 
 
 if __name__ == '__main__':

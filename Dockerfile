@@ -36,11 +36,44 @@ COPY . .
 # 创建数据目录并设置权限
 RUN mkdir -p /app/data && \
     chown -R notifyhub:notifyhub /app
-USER notifyhub
+
+# 获取用户ID用于权限设置
+RUN id notifyhub
 
 ENV FLASK_APP=app.py \
     FLASK_DEBUG=0
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "flask init-db && gunicorn --bind 0.0.0.0:5000 app:app"]
+# 创建启动脚本
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "=== 启动脚本开始 ==="\n\
+echo "当前用户: $(whoami)"\n\
+echo "当前目录: $(pwd)"\n\
+\n\
+# 确保数据目录存在并有正确权限\n\
+echo "创建数据目录..."\n\
+mkdir -p /app/data\n\
+\n\
+echo "设置目录权限..."\n\
+chown -R notifyhub:notifyhub /app/data\n\
+chmod -R 755 /app/data\n\
+\n\
+echo "检查目录权限:"\n\
+ls -la /app/data\n\
+\n\
+echo "检查环境变量:"\n\
+echo "DATABASE_URL: $DATABASE_URL"\n\
+\n\
+# 测试数据库文件创建\n\
+echo "测试数据库文件创建权限..."\n\
+su notifyhub -c "touch /app/data/test.db && rm /app/data/test.db"\n\
+echo "数据库文件创建权限正常"\n\
+\n\
+echo "切换到notifyhub用户并启动应用..."\n\
+su notifyhub -c "cd /app && flask init-db && gunicorn --bind 0.0.0.0:5000 app:app"\n\
+' > /start.sh && chmod +x /start.sh
+
+CMD ["/start.sh"]

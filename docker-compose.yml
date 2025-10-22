@@ -6,10 +6,7 @@ services:
     env_file:
       - .env
     volumes:
-      - notifyhub-data:/app/data
+      - "./data:/app/data"
     environment:
-      - DATABASE_URL=sqlite:///data/notifyhub.db
+      - DATABASE_URL=sqlite:////app/data/notifyhub.db
     restart: unless-stopped
-
-volumes:
-  notifyhub-data:
